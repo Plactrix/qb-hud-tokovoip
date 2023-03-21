@@ -519,7 +519,7 @@ RegisterNUICallback('showDegreesNum', function(_, cb)
 end)
 
 RegisterNUICallback('changeCompassFPS', function(_, cb)
-	Wait(50)
+    Wait(50)
     Menu.isChangeCompassFPSChecked = not Menu.isChangeCompassFPSChecked
     TriggerEvent("hud:client:playHudChecklistSound")
     saveSettings()
@@ -716,9 +716,25 @@ CreateThread(function()
                 oxygen = GetPlayerUnderwaterTimeRemaining(playerId) * 10
             end
             -- Player hud
-            local talking = NetworkIsPlayerTalking(playerId)
-            local voice = 0
-            if LocalPlayer.state['proximity'] then
+            if Config.VoiceSystem == "tokovoip" then
+                talking = tonumber(exports["tokovoip_script"]:getPlayerData(GetPlayerServerId(PlayerId()), "voip:talking")) or 0
+            else
+                talking = NetworkIsPlayerTalking(playerId)
+            end
+            if Config.VoiceSystem == "tokovoip" then
+                local voiceMode = exports["tokovoip_script"]:getPlayerData(GetPlayerServerId(PlayerId()), "voip:mode") or 0
+                if voiceMode == 1 then
+                    voice = 1.5 -- Whisper
+                elseif voiceMode == 2 then
+                    voice = 3.0 -- Normal
+                elseif voiceMode == 3 then
+                    voice = 6.0 -- Shouting
+                elseif voiceMode == 4 then
+                    voice = 70.0 -- Theatre (If enabled)
+                else
+                    voice = 3.0
+                end
+            else
                 voice = LocalPlayer.state['proximity'].distance
             end
             if IsPauseMenuActive() then
@@ -726,6 +742,11 @@ CreateThread(function()
             end
             local vehicle = GetVehiclePedIsIn(player)
             if not (IsPedInAnyVehicle(player) and not IsThisModelABicycle(vehicle)) then
+            if Config.VoiceSystem == "tokovoip" then
+                radioChannel = exports["tokovoip_script"]:getPlayerData(GetPlayerServerId(PlayerId()), "radio:channel")
+            else
+                radioChannel = LocalPlayer.state['radioChannel']
+            end
             updatePlayerHud({
                 show,
                 Menu.isDynamicHealthChecked,
@@ -743,7 +764,7 @@ CreateThread(function()
                 hunger,
                 stress,
                 voice,
-                LocalPlayer.state['radioChannel'],
+                radioChannel,
                 talking,
                 armed,
                 oxygen,
@@ -787,7 +808,7 @@ CreateThread(function()
                     hunger,
                     stress,
                     voice,
-                    LocalPlayer.state['radioChannel'],
+                    radioChannel,
                     talking,
                     armed,
                     oxygen,
